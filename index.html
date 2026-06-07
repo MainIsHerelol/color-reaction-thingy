@@ -305,10 +305,18 @@
             'Jaune': 'jaune'
         };
 
+        // Fréquences pour chaque couleur (gamme musicale)
+        const frequencies = {
+            'Rouge': 262,    // C4
+            'Bleu': 330,     // E4
+            'Vert': 392,     // G4
+            'Jaune': 523     // C5
+        };
+
         let gameActive = false;
         let countdownRunning = false;
         let waitingRunning = false;
-        let audioInitialized = false;
+        let audioContext = null;
 
         const stateDisplay = document.getElementById('stateDisplay');
         const colorCircle = document.getElementById('colorCircle');
@@ -316,13 +324,16 @@
         const continueBtn = document.getElementById('continueBtn');
         const stopBtn = document.getElementById('stopBtn');
 
-        // Initialiser l'audio au premier clic (requis sur mobile)
+        // Initialiser AudioContext au premier interaction
         function initializeAudio() {
-            if (audioInitialized) return;
-            const dummy = new SpeechSynthesisUtterance('');
-            window.speechSynthesis.speak(dummy);
-            window.speechSynthesis.cancel();
-            audioInitialized = true;
+            if (audioContext) return;
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioContext = new AudioContext();
+                console.log('AudioContext initialized');
+            } catch (e) {
+                console.error('Web Audio API not supported', e);
+            }
         }
 
         // Ajouter l'initialisation audio au premier clic
@@ -352,22 +363,38 @@
             countdownRunning = false;
         }
 
-        function playAudio(text) {
-            // Annuler tout audio en cours
-            window.speechSynthesis.cancel();
-            
-            const utterance = new SpeechSynthesisUtterance(text);
-            utterance.lang = 'fr-FR';
-            utterance.rate = 1;
-            utterance.pitch = 1;
-            utterance.volume = 1;
-            
-            // Augmenter le délai pour mobile
-            utterance.onstart = function() {
-                console.log('Audio started:', text);
-            };
-            
-            window.speechSynthesis.speak(utterance);
+        function playTone(frequency, duration = 0.5) {
+            if (!audioContext) {
+                console.log('AudioContext not initialized');
+                return;
+            }
+
+            try {
+                const now = audioContext.currentTime;
+                const osc = audioContext.createOscillator();
+                const gain = audioContext.createGain();
+
+                osc.connect(gain);
+                gain.connect(audioContext.destination);
+
+                osc.frequency.value = frequency;
+                osc.type = 'sine';
+
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+
+                osc.start(now);
+                osc.stop(now + duration);
+            } catch (e) {
+                console.error('Error playing tone:', e);
+            }
+        }
+
+        function playAudio(colorName) {
+            const frequency = frequencies[colorName];
+            if (frequency) {
+                playTone(frequency, 0.8);
+            }
         }
 
         function showColor(colorName) {
@@ -438,7 +465,6 @@
             gameActive = false;
             countdownRunning = false;
             waitingRunning = false;
-            window.speechSynthesis.cancel();
             
             hideColor();
             updateState('Prêt');
