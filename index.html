@@ -2,18 +2,28 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Color Reaction Game</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -33,14 +43,14 @@
         .container {
             position: relative;
             width: 100%;
-            height: 100vh;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
         }
 
         .card {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
             width: 90%;
             max-width: 500px;
             padding: 40px 30px;
@@ -56,11 +66,11 @@
         @keyframes fadeInScale {
             from {
                 opacity: 0;
-                transform: translate(-50%, -50%) scale(0.9);
+                transform: scale(0.9);
             }
             to {
                 opacity: 1;
-                transform: translate(-50%, -50%) scale(1);
+                transform: scale(1);
             }
         }
 
@@ -73,6 +83,7 @@
             align-items: center;
             justify-content: center;
             animation: textPulse 0.5s ease-out;
+            word-wrap: break-word;
         }
 
         @keyframes textPulse {
@@ -163,6 +174,9 @@
             text-transform: uppercase;
             letter-spacing: 1px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-tap-highlight-color: transparent;
         }
 
         button:hover {
@@ -205,11 +219,20 @@
             }
         }
 
-        @media (max-width: 480px) {
+        @media (max-width: 768px) {
+            body {
+                padding-top: env(safe-area-inset-top);
+                padding-bottom: env(safe-area-inset-bottom);
+                padding-left: env(safe-area-inset-left);
+                padding-right: env(safe-area-inset-right);
+            }
+
             .card {
                 width: 95%;
                 padding: 30px 20px;
                 border-radius: 20px;
+                max-height: 90vh;
+                overflow-y: auto;
             }
 
             .state-display {
@@ -229,6 +252,33 @@
                 padding: 12px 24px;
                 font-size: 0.9rem;
                 min-width: 120px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                width: 95%;
+                padding: 25px 15px;
+                border-radius: 15px;
+            }
+
+            .state-display {
+                font-size: 1.3rem;
+                margin-bottom: 15px;
+                height: 45px;
+            }
+
+            .color-circle {
+                width: 100px;
+                height: 100px;
+                margin: 15px auto;
+                font-size: 0.9rem;
+            }
+
+            button {
+                padding: 10px 20px;
+                font-size: 0.85rem;
+                min-width: 100px;
             }
         }
     </style>
@@ -258,12 +308,26 @@
         let gameActive = false;
         let countdownRunning = false;
         let waitingRunning = false;
+        let audioInitialized = false;
 
         const stateDisplay = document.getElementById('stateDisplay');
         const colorCircle = document.getElementById('colorCircle');
         const startBtn = document.getElementById('startBtn');
         const continueBtn = document.getElementById('continueBtn');
         const stopBtn = document.getElementById('stopBtn');
+
+        // Initialiser l'audio au premier clic (requis sur mobile)
+        function initializeAudio() {
+            if (audioInitialized) return;
+            const dummy = new SpeechSynthesisUtterance('');
+            window.speechSynthesis.speak(dummy);
+            window.speechSynthesis.cancel();
+            audioInitialized = true;
+        }
+
+        // Ajouter l'initialisation audio au premier clic
+        document.addEventListener('click', initializeAudio, { once: true });
+        document.addEventListener('touchstart', initializeAudio, { once: true });
 
         function updateState(text) {
             stateDisplay.textContent = text;
@@ -289,11 +353,20 @@
         }
 
         function playAudio(text) {
+            // Annuler tout audio en cours
+            window.speechSynthesis.cancel();
+            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'fr-FR';
             utterance.rate = 1;
             utterance.pitch = 1;
             utterance.volume = 1;
+            
+            // Augmenter le délai pour mobile
+            utterance.onstart = function() {
+                console.log('Audio started:', text);
+            };
+            
             window.speechSynthesis.speak(utterance);
         }
 
@@ -329,7 +402,7 @@
             if (!gameActive) return;
             
             playAudio(selectedColor);
-            await sleep(500);
+            await sleep(1000);
             showColor(selectedColor);
             updateState(selectedColor);
             
@@ -338,6 +411,7 @@
         }
 
         async function startGame() {
+            initializeAudio();
             gameActive = true;
             startBtn.classList.add('hidden');
             stopBtn.disabled = false;
@@ -364,6 +438,7 @@
             gameActive = false;
             countdownRunning = false;
             waitingRunning = false;
+            window.speechSynthesis.cancel();
             
             hideColor();
             updateState('Prêt');
@@ -374,6 +449,16 @@
 
         // Initialize
         stopBtn.disabled = true;
+
+        // Empêcher le zoom au double-tap
+        let lastTouchEnd = 0;
+        document.addEventListener('touchend', function(event) {
+            const now = Date.now();
+            if (now - lastTouchEnd <= 300) {
+                event.preventDefault();
+            }
+            lastTouchEnd = now;
+        }, false);
     </script>
 </body>
 </html>
