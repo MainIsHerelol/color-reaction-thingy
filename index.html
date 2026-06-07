@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Color Reaction Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+            background-size: 400% 400%;
+            animation: gradientShift 15s ease infinite;
+            overflow: hidden;
+            color: #fff;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+        }
+
+        .card {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 500px;
+            padding: 40px 30px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 30px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            animation: fadeInScale 0.6s ease-out;
+            text-align: center;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.9);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+
+        .state-display {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 30px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: textPulse 0.5s ease-out;
+        }
+
+        @keyframes textPulse {
+            0% {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .color-circle {
+            width: 150px;
+            height: 150px;
+            margin: 30px auto;
+            border-radius: 50%;
+            background: transparent;
+            border: 4px solid rgba(255, 255, 255, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            animation: colorPop 0.6s ease-out;
+        }
+
+        @keyframes colorPop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .color-circle.rouge {
+            background: radial-gradient(circle, rgba(255, 76, 76, 0.8), rgba(200, 0, 0, 0.9));
+            border-color: #ff4c4c;
+            box-shadow: 0 0 30px rgba(255, 76, 76, 0.6);
+        }
+
+        .color-circle.bleu {
+            background: radial-gradient(circle, rgba(76, 144, 255, 0.8), rgba(0, 80, 200, 0.9));
+            border-color: #4c90ff;
+            box-shadow: 0 0 30px rgba(76, 144, 255, 0.6);
+        }
+
+        .color-circle.vert {
+            background: radial-gradient(circle, rgba(76, 255, 144, 0.8), rgba(0, 180, 100, 0.9));
+            border-color: #4cff90;
+            box-shadow: 0 0 30px rgba(76, 255, 144, 0.6);
+        }
+
+        .color-circle.jaune {
+            background: radial-gradient(circle, rgba(255, 220, 76, 0.8), rgba(255, 180, 0, 0.9));
+            border-color: #ffdc4c;
+            box-shadow: 0 0 30px rgba(255, 220, 76, 0.6);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 30px;
+        }
+
+        button {
+            padding: 14px 32px;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 15px;
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background: rgba(255, 255, 255, 0.35);
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(-1px);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .countdown {
+            font-size: 3rem;
+            font-weight: 700;
+            animation: countdownBounce 0.8s ease-out;
+        }
+
+        @keyframes countdownBounce {
+            0% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .card {
+                width: 95%;
+                padding: 30px 20px;
+                border-radius: 20px;
+            }
+
+            .state-display {
+                font-size: 1.5rem;
+                margin-bottom: 20px;
+                height: 50px;
+            }
+
+            .color-circle {
+                width: 120px;
+                height: 120px;
+                margin: 20px auto;
+                font-size: 1rem;
+            }
+
+            button {
+                padding: 12px 24px;
+                font-size: 0.9rem;
+                min-width: 120px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="state-display" id="stateDisplay">Prêt</div>
+            <div class="color-circle hidden" id="colorCircle"></div>
+            <div class="button-group">
+                <button id="startBtn" onclick="startGame()">Démarrer</button>
+                <button id="continueBtn" class="hidden" onclick="nextRound()">Continuer</button>
+                <button id="stopBtn" onclick="stopGame()">Arrêter</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colors = ['Rouge', 'Bleu', 'Vert', 'Jaune'];
+        const colorMap = {
+            'Rouge': 'rouge',
+            'Bleu': 'bleu',
+            'Vert': 'vert',
+            'Jaune': 'jaune'
+        };
+
+        let gameActive = false;
+        let countdownRunning = false;
+        let waitingRunning = false;
+
+        const stateDisplay = document.getElementById('stateDisplay');
+        const colorCircle = document.getElementById('colorCircle');
+        const startBtn = document.getElementById('startBtn');
+        const continueBtn = document.getElementById('continueBtn');
+        const stopBtn = document.getElementById('stopBtn');
+
+        function updateState(text) {
+            stateDisplay.textContent = text;
+            stateDisplay.style.animation = 'none';
+            setTimeout(() => {
+                stateDisplay.style.animation = 'textPulse 0.5s ease-out';
+            }, 10);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function countdown() {
+            countdownRunning = true;
+            for (let i = 3; i > 0; i--) {
+                updateState(i);
+                stateDisplay.classList.add('countdown');
+                await sleep(1000);
+                stateDisplay.classList.remove('countdown');
+            }
+            countdownRunning = false;
+        }
+
+        function playAudio(text) {
+            const url = `https://translate.google.com/translate_tts?client=tw-ob&tl=fr&q=${encodeURIComponent(text)}`;
+            const audio = new Audio(url);
+            audio.play().catch(err => console.log('Audio play error:', err));
+        }
+
+        function showColor(colorName) {
+            const classKey = colorMap[colorName];
+            colorCircle.className = `color-circle ${classKey}`;
+            colorCircle.textContent = colorName;
+            colorCircle.classList.remove('hidden');
+            colorCircle.style.animation = 'none';
+            setTimeout(() => {
+                colorCircle.style.animation = 'colorPop 0.6s ease-out';
+            }, 10);
+        }
+
+        function hideColor() {
+            colorCircle.classList.add('hidden');
+        }
+
+        async function waitForAudio() {
+            waitingRunning = true;
+            const randomDelay = Math.random() * 9000 + 1000; // 1-10 seconds
+            updateState(`Attente (${Math.ceil(randomDelay / 1000)}s)`);
+            
+            let elapsedTime = 0;
+            const updateInterval = 100;
+            const timer = setInterval(() => {
+                if (!waitingRunning) {
+                    clearInterval(timer);
+                    return;
+                }
+                elapsedTime += updateInterval;
+                const remaining = Math.max(0, Math.ceil((randomDelay - elapsedTime) / 1000));
+                if (remaining > 0) {
+                    updateState(`Attente (${remaining}s)`);
+                }
+            }, updateInterval);
+
+            await sleep(randomDelay);
+            clearInterval(timer);
+            waitingRunning = false;
+        }
+
+        async function playRound() {
+            const selectedColor = colors[Math.floor(Math.random() * colors.length)];
+            
+            await waitForAudio();
+            
+            if (!gameActive) return;
+            
+            playAudio(selectedColor);
+            await sleep(500);
+            showColor(selectedColor);
+            updateState(selectedColor);
+            
+            startBtn.classList.add('hidden');
+            continueBtn.classList.remove('hidden');
+        }
+
+        async function startGame() {
+            gameActive = true;
+            startBtn.classList.add('hidden');
+            stopBtn.disabled = false;
+            hideColor();
+            
+            await countdown();
+            
+            if (gameActive) {
+                await playRound();
+            }
+        }
+
+        async function nextRound() {
+            continueBtn.classList.add('hidden');
+            hideColor();
+            await countdown();
+            
+            if (gameActive) {
+                await playRound();
+            }
+        }
+
+        function stopGame() {
+            gameActive = false;
+            countdownRunning = false;
+            waitingRunning = false;
+            
+            hideColor();
+            updateState('Prêt');
+            startBtn.classList.remove('hidden');
+            continueBtn.classList.add('hidden');
+            stopBtn.disabled = true;
+        }
+
+        // Initialize
+        stopBtn.disabled = true;
+    </script>
+</body>
+</html>
