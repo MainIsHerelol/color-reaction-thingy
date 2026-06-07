@@ -289,9 +289,12 @@
         }
 
         function playAudio(text) {
-            const url = `https://translate.google.com/translate_tts?client=tw-ob&tl=fr&q=${encodeURIComponent(text)}`;
-            const audio = new Audio(url);
-            audio.play().catch(err => console.log('Audio play error:', err));
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'fr-FR';
+            utterance.rate = 1;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+            window.speechSynthesis.speak(utterance);
         }
 
         function showColor(colorName) {
@@ -312,24 +315,9 @@
         async function waitForAudio() {
             waitingRunning = true;
             const randomDelay = Math.random() * 9000 + 1000; // 1-10 seconds
-            updateState(`Attente (${Math.ceil(randomDelay / 1000)}s)`);
+            updateState('Attente...');
             
-            let elapsedTime = 0;
-            const updateInterval = 100;
-            const timer = setInterval(() => {
-                if (!waitingRunning) {
-                    clearInterval(timer);
-                    return;
-                }
-                elapsedTime += updateInterval;
-                const remaining = Math.max(0, Math.ceil((randomDelay - elapsedTime) / 1000));
-                if (remaining > 0) {
-                    updateState(`Attente (${remaining}s)`);
-                }
-            }, updateInterval);
-
             await sleep(randomDelay);
-            clearInterval(timer);
             waitingRunning = false;
         }
 
